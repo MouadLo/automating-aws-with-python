@@ -1,52 +1,67 @@
-import boto3
-import click
-from botocore.exceptions import ClientError
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+
+"""Webotron: Deploy websites with aws
+
+Webotron automate the process of deploying static websites to AWS.
+- Configure AWS S3 buckets
+- Create them
+- Set them up for static website hosting
+- Deploy local files to them
+- Configure DNS with AWS Route 53
+- Configure a Content Delivery Network and SSL with CloudFront
+"""
+
 from pathlib import Path
 import mimetypes
+import boto3
+from botocore.exceptions import ClientError
+import click
+
 
 session = boto3.session.Session()
-s3 = session.resource('s3')
+S3 = session.resource('s3')
 
 
 @click.group()
 def cli():
-    "Webotron deploys websites to AWS"
+    """Webotron deploys websites to AWS"""
     pass
 
 
 @cli.command('list-buckets')
 def list_buckets():
-    "List all s3 buckets"
-    for bucket in s3.buckets.all():
+    """List all s3 buckets"""
+    for bucket in S3.buckets.all():
         print(bucket)
         
-        
+
+
 @cli.command('list-bucket-objects')
 @click.argument('bucket')
 def list_bucket_objetcs(bucket):
-    "List objects in an s3 bucket"
-    for obj in s3.Bucket(bucket).objects.all():
+    """List objects in an s3 bucket"""
+    for obj in S3.Bucket(bucket).objects.all():
         print(obj)
-
 
 
 @cli.command('setup-bucket')
 @click.argument('bucket')
 def setup_bucket(bucket):
-    "Create and configure S3 bucket"
+    """Create and configure S3 bucket"""
     new_s3_bucket = None
     try:
-        new_s3_bucket = s3.create_bucket(
+        new_s3_bucket = S3.create_bucket(
             Bucket=bucket, 
             CreateBucketConfiguration={'LocationConstraint': 'us-east-2'}
         )
-    except ClientError as e:
-        if e.response['Error']['Code'] == 'BucketAlreadyOwnedByYou':
-            new_s3_bucket = s3.Bucket(bucket)
+    except ClientError as error:
+        if error.response['Error']['Code'] == 'BucketAlreadyOwnedByYou':
+            new_s3_bucket = S3.Bucket(bucket)
         else:
-            raise e
+            raise error
         
-    
     policy = """
     {
       "Version":"2012-10-17",
@@ -70,10 +85,8 @@ def setup_bucket(bucket):
     pol.put(Policy=policy)
   
     #Creates a BucketWebsite resource. 
-    ws = new_s3_bucket.Website()
-    
     #Sets the configuration of the website that is specified in the website subresource.
-    ws.put(WebsiteConfiguration={
+    new_s3_bucket.Website().put(WebsiteConfiguration={
         'ErrorDocument': {
             'Key': 'error.html'
         },
@@ -82,7 +95,6 @@ def setup_bucket(bucket):
         }
     })
     return
-
 
 def upload_file(s3_bucket, path, key):
     content_type = mimetypes.guess_type(key)[0] or 'text/plain'
@@ -94,20 +106,22 @@ def upload_file(s3_bucket, path, key):
         }
     )
 
+
 @cli.command('sync')
 @click.argument('pathname', type=click.Path(exists=True))
 @click.argument('bucket')
 def sync(pathname, bucket):
-    "Sync contents of PATHNAME to BUCKET"
-    s3_bucket = s3.Bucket(bucket)
+    """Sync contents of PATHNAME to BUCKET"""
+    s3_bucket = S3.Bucket(bucket)
     root = Path(pathname).expanduser().resolve()
     
     def handle_directory(target):
-        for p in target.iterdir():
-            if p.is_dir(): handle_directory(p)
-            if p.is_file(): upload_file(s3_bucket, str(p), str(p.relative_to(root)))
+        for path in target.iterdir():
+            if path.is_dir(): handle_directory(path)
+            if path.is_file(): upload_file(s3_bucket, str(path), str(path.relative_to(root)))
     
     handle_directory(root)
+
 
 if __name__ == '__main__':
     cli()
