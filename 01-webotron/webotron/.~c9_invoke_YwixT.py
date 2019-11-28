@@ -1,6 +1,6 @@
 import boto3
 import click
-from botocore.exceptions import ClientError
+
 
 session = boto3.session.Session()
 s3 = session.resource('s3')
@@ -32,19 +32,10 @@ def list_bucket_objetcs(bucket):
 @click.argument('bucket')
 def setup_bucket(bucket):
     "Create and configure S3 bucket"
-    new_s3_bucket = None
-    try:
-        new_s3_bucket = s3.create_bucket(
-            Bucket=bucket, 
-            CreateBucketConfiguration={'LocationConstraint': 'us-east-2'}
-        )
-    except ClientError as e:
-        if e.response['Error']['Code'] == 'BucketAlreadyOwnedByYou':
-            new_s3_bucket = s3.Bucket(bucket)
-        else:
-            raise e
-        
-    
+    new_s3_bucket = s3.create_bucket(
+        Bucket=bucket, 
+        CreateBucketConfiguration={'LocationConstraint': }
+    )
     policy = """
     {
       "Version":"2012-10-17",
@@ -68,7 +59,7 @@ def setup_bucket(bucket):
     pol.put(Policy=policy)
   
     #Creates a BucketWebsite resource. 
-    ws = new_s3_bucket.Website()
+    ws = new_bucket.Website()
     
     #Sets the configuration of the website that is specified in the website subresource.
     ws.put(WebsiteConfiguration={
