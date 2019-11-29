@@ -69,7 +69,7 @@ class BucketManager:
         
     
     def configure_website(self, bucket):
-       
+        """Configure s3 website hosting for bucket."""
         bucket.Website().put(
             WebsiteConfiguration={
                 'ErrorDocument': {
@@ -81,8 +81,6 @@ class BucketManager:
             }
         )    
 
-    
-    
     @staticmethod
     def upload_file(bucket, path, key):
         """Upload path to s3_bucket at key."""
@@ -96,8 +94,8 @@ class BucketManager:
         )
         
     def sync(self, pathname, bucket_name):
+        """Sync content of path to bucket"""
         bucket = self.S3.Bucket(bucket_name)
-        
         root = Path(pathname).expanduser().resolve()
         
         def handle_directory(target):
