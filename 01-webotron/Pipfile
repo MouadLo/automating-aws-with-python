@@ -7,10 +7,11 @@ verify_ssl = true
 ipython = "*"
 pycodestyle = "*"
 pylint = "*"
+pydocstyle = "*"
+pyflakes = "*"
 
 [packages]
 boto3 = "*"
-logging = "*"
 click = "*"
 
 [requires]
