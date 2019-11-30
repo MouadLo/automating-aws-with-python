@@ -16,7 +16,6 @@ def start_label_detection(bucket, key):
             'SNSTopicArn': os.environ['REKOGNITION_SNS_TOPIC_ARN'],
             'RoleArn': os.environ['REKOGNITION_ROLE_ARN']
         })
-    print(response)
     
     return
 
@@ -91,5 +90,5 @@ def handle_label_detection(event, context):
         s3_bucket = message['Video']['S3Bucket']
         
         response = get_video_labels(job_id)
-        print(response)
+        put_labels_in_db(response, s3_object, s3_bucket)
     return
