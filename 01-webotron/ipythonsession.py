@@ -11,3 +11,12 @@ s3 = session.resource('s3')
 #for bucket in s3.buckets.all():
 #    print(bucket)
 
+
+
+from pprint import pprint
+
+paginator = s3.meta.client.get_paginator('list_objects_v2')
+for page in paginator.paginate(Bucket='automating-static-website'):
+    for obj in page.get('Contents', []):
+        pprint(obj)
+
